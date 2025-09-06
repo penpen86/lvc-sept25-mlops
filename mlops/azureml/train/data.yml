@@ -1,0 +1,6 @@
+$schema: https://azuremlschemas.azureedge.net/latest/data.schema.json
+
+type: uri_file
+name: pima-diabetes-data
+description: A dataset of pima diabetes prediction
+path: ../../../data/pima.csv

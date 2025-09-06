@@ -1,0 +1,27 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+type: command  # This is correct for trial definitions
+name: train_model
+display_name: train_model
+inputs: 
+  train_data:
+    type: uri_folder
+  test_data:
+    type: uri_folder
+  criterion:
+    type: string
+    default: gini
+  max_depth:
+    type: integer
+    default: 5
+outputs:
+  model_output:
+    type: mlflow_model
+code: ../../../data-science/src
+command: >-
+  python train.py 
+  --train_data ${{inputs.train_data}}
+  --test_data ${{inputs.test_data}}
+  --criterion ${{inputs.criterion}}
+  --max_depth ${{inputs.max_depth}}
+  --model_output ${{outputs.model_output}}
+environment: azureml:pima-train-env@latest

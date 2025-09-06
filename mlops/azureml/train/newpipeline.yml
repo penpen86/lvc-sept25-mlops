@@ -1,0 +1,81 @@
+$schema: https://azuremlschemas.azureedge.net/latest/pipelineJob.schema.json
+type: pipeline
+display_name: decision_tree_training_pipeline
+experiment_name: pima-classification-training
+description: Training Pipeline to predict diabetes using Decision Tree classifier
+
+inputs:
+  input:
+    type: uri_file
+    path: azureml:pima-diabetes-data@latest
+
+outputs:
+  train_data:
+  test_data:
+  model_info_output_path:
+
+settings:
+  default_datastore: azureml:workspaceblobstore
+  default_compute: azureml:cpu-cluster
+  continue_on_step_failure: false
+
+jobs:
+  prep_data:
+    name: prep_data
+    display_name: prep-data
+    code: ../../../data-science/src
+    command: >-
+      python prep.py 
+      --raw_data ${{inputs.raw_data}} 
+      --train_data ${{outputs.train_data}}
+      --test_data ${{outputs.test_data}}
+    environment: azureml:pima-train-env@latest
+    inputs:
+      raw_data: ${{parent.inputs.input}}
+    outputs:
+      train_data: ${{parent.outputs.train_data}}
+      test_data: ${{parent.outputs.test_data}}
+
+  sweep_step:
+    name: sweep_job
+    display_name: sweep-job
+    type: sweep
+    inputs:
+      train_data: ${{parent.jobs.prep_data.outputs.train_data}}
+      test_data: ${{parent.jobs.prep_data.outputs.test_data}}
+    outputs:
+      model_output:
+        type: mlflow_model
+    sampling_algorithm: random
+    trial: ./train.yml  # Refers to a separate command component
+    search_space:
+      criterion:
+        type: choice
+        values: ["gini", "entropy"]
+      max_depth:
+        type: choice
+        values: [1,3,5,10]
+    objective:
+      goal: maximize
+      primary_metric: Recall
+    limits:
+      max_total_trials: 20
+      max_concurrent_trials: 10
+      timeout: 7200
+
+
+  register_model:
+    name: register_model
+    display_name: register-model
+    code: ../../../data-science/src
+    command: >-
+      python register.py 
+      --model_name ${{inputs.model_name}} 
+      --model_path ${{inputs.model_path}} 
+      --model_info_output_path ${{outputs.model_info_output_path}}
+    environment: azureml:pima-train-env@latest
+    inputs:
+      model_name: "pima_classification_model"
+      model_path: ${{parent.jobs.sweep_step.outputs.model_output}}
+    outputs:
+      model_info_output_path: ${{parent.outputs.model_info_output_path}}

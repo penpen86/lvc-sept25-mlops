@@ -1,0 +1,23 @@
+# Prod environment
+variables:
+
+  # Global
+  ap_vm_image: ubuntu-20.04
+
+  namespace: demoworkspace # Updated namespace
+  postfix: 001 # Updated postfix
+  location: eastus # Updated location
+
+  environment: prod
+  enable_aml_computecluster: true
+  enable_aml_secure_workspace: true
+  enable_monitoring: false
+
+  # Azure DevOps
+  ado_service_connection_rg: Azure-ARM-Prod
+  ado_service_connection_aml_ws: Azure-ARM-Prod
+
+  # For pipeline reference
+  resource_group: <enter-your-resource-group-name>
+  aml_workspace: <enter-your-aml-workspace-name>
+
