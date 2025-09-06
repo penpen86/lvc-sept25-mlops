@@ -1,0 +1,80 @@
+
+name: create-compute
+
+on: 
+  workflow_call:
+    inputs:
+      cluster_name:
+        required: true
+        type: string
+      size:  
+        required: true
+        type: string
+      min_instances: 
+        required: true
+        type: number
+      max_instances: 
+        required: true
+        type: number
+      resource_group:   
+        required: true
+        type: string
+      workspace_name:  
+        required: true
+        type: string
+      cluster_tier: 
+        required: false
+        type: string
+    secrets:
+      creds:
+        required: true
+jobs:
+  create-compute:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Az CLI login'
+        uses: azure/login@v1
+        with:
+          # Azure login can use either Service Principal or OIDC authentication:
+          # 1. Service Principal: Uses client ID, tenant ID, client secret/certificate
+          creds: ${{secrets.creds}}
+          #
+          # 2. OIDC (OpenID Connect): More secure, uses federated identity credentials
+          #    Example:
+          #    client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          #    tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          #    subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          #    enable-oidc: true
+          #
+          # Choose the appropriate method based on your security requirements
+          # client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          # tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          # subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          # Uncomment next line to use OIDC
+          # enable-oidc: true
+      - name: install-extension
+        run:  az extension add -n ml -y
+      - name: update-extension
+        run: az extension update -n ml
+      - name: create-compute-default-tier
+        if: ${{ inputs.cluster_tier == ''}}
+        run: |
+          az ml compute create --name ${{ inputs.cluster_name }} \
+                                  --type AmlCompute \
+                                  --tier "dedicated" \
+                                  --size ${{ inputs.size }} \
+                                  --min-instances ${{ inputs.min_instances }} \
+                                  --max-instances ${{ inputs.max_instances }} \
+                                  --resource-group ${{ inputs.resource_group }} \
+                                  --workspace-name ${{ inputs.workspace_name }}
+      - name: create-compute-using-tier
+        if: ${{ inputs.cluster_tier != ''}}
+        run: |
+          az ml compute create --name ${{ inputs.cluster_name }} \
+                                  --type AmlCompute \
+                                  --tier ${{ inputs.cluster_tier }} \
+                                  --size ${{ inputs.size }} \
+                                  --min-instances ${{ inputs.min_instances }} \
+                                  --max-instances ${{ inputs.max_instances }} \
+                                  --resource-group ${{ inputs.resource_group }} \
+                                  --workspace-name ${{ inputs.workspace_name }}
