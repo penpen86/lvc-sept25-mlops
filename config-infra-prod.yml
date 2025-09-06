@@ -18,6 +18,6 @@ variables:
   ado_service_connection_aml_ws: Azure-ARM-Prod
 
   # For pipeline reference
-  resource_group: <enter-your-resource-group-name>
-  aml_workspace: <enter-your-aml-workspace-name>
+  resource_group: mlsops-june2023
+  aml_workspace: mlsops-june2023
 
